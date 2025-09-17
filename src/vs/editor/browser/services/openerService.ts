@@ -16,6 +16,7 @@ import { URI } from '../../../base/common/uri.js';
 import { ICodeEditorService } from './codeEditorService.js';
 import { ICommandService } from '../../../platform/commands/common/commands.js';
 import { EditorOpenSource } from '../../../platform/editor/common/editor.js';
+import { ILogService } from '../../../platform/log/common/log.js';
 import { extractSelection, IExternalOpener, IExternalUriResolver, IOpener, IOpenerService, IResolvedExternalUri, IValidator, OpenOptions, ResolveExternalUriOptions } from '../../../platform/opener/common/opener.js';
 
 class CommandOpener implements IOpener {
@@ -67,7 +68,10 @@ class CommandOpener implements IOpener {
 
 class EditorOpener implements IOpener {
 
-	constructor(@ICodeEditorService private readonly _editorService: ICodeEditorService) { }
+	constructor(
+		@ICodeEditorService private readonly _editorService: ICodeEditorService,
+		@ILogService private readonly _logService: ILogService
+	) { }
 
 	async open(target: URI | string, options: OpenOptions) {
 		if (typeof target === 'string') {
@@ -78,7 +82,9 @@ class EditorOpener implements IOpener {
 		target = uri;
 
 		if (target.scheme === Schemas.file) {
+			this._logService.info('EditorOpener: Target BEFORE normalization:', target.toString());
 			target = normalizePath(target); // workaround for non-normalized paths (https://github.com/microsoft/vscode/issues/12954)
+			this._logService.info('EditorOpener: Target AFTER normalization:', target.toString());
 		}
 
 		await this._editorService.openCodeEditor(
