@@ -127,6 +127,30 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 				}
 			}));
 
+			// Debug: Write results to file
+			try {
+				const debugInfo = {
+					timestamp: new Date().toISOString(),
+					resource: resource.toString(),
+					fsPath: this.toFilePath(resource),
+					childrenCount: result.length,
+					children: result.map(([name, type]) => ({
+						name,
+						type: type.toString(),
+						isFile: (type & FileType.File) !== 0,
+						isDirectory: (type & FileType.Directory) !== 0,
+						isSymbolicLink: (type & FileType.SymbolicLink) !== 0
+					}))
+				};
+
+				const debugPath = join(this.toFilePath(resource), '..', '..', 'readdir-debug.log');
+				const debugContent = JSON.stringify(debugInfo, null, 2) + '\n\n';
+				await promises.appendFile(debugPath, debugContent);
+			} catch (debugError) {
+				// Don't let debug logging break the main functionality
+				this.logService.trace('Failed to write debug log:', debugError);
+			}
+
 			return result;
 		} catch (error) {
 			throw this.toFileSystemProviderError(error);
