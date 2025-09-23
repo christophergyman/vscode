@@ -16,6 +16,7 @@ export function normalizeNFD(str: string): string {
 }
 
 const nonAsciiCharactersPattern = /[^\u0000-\u0080]/;
+const bomPattern = /^\uFEFF/; // BOM character at start of string
 function normalize(str: string, form: string, normalizedCache: LRUCache<string, string>): string {
 	if (!str) {
 		return str;
@@ -28,7 +29,15 @@ function normalize(str: string, form: string, normalizedCache: LRUCache<string, 
 
 	let res: string;
 	if (nonAsciiCharactersPattern.test(str)) {
-		res = str.normalize(form);
+		// Check if string starts with BOM character
+		const hasBOM = bomPattern.test(str);
+		const strWithoutBOM = hasBOM ? str.slice(1) : str;
+
+		// Normalize the string without BOM
+		const normalizedWithoutBOM = strWithoutBOM.normalize(form);
+
+		// Restore BOM if it was present
+		res = hasBOM ? '\uFEFF' + normalizedWithoutBOM : normalizedWithoutBOM;
 	} else {
 		res = str;
 	}
